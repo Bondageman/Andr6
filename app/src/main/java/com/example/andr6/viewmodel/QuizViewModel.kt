@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class QuizViewModel(private val repository: QuizRepository) : ViewModel() {
-
     private val _uiState = MutableStateFlow<QuizUiState>(QuizUiState.Loading)
     val uiState: StateFlow<QuizUiState> = _uiState.asStateFlow()
 
@@ -23,14 +22,20 @@ class QuizViewModel(private val repository: QuizRepository) : ViewModel() {
             try {
                 repository.refreshQuestions()
                 repository.allQuestions.collect { questions ->
-                    if (questions.isEmpty()) {
-                        _uiState.value = QuizUiState.Error("Дані відсутні")
-                    } else {
-                        _uiState.value = QuizUiState.Success(questions)
-                    }
+                    _uiState.value = QuizUiState.Success(questions)
                 }
             } catch (e: Exception) {
-                _uiState.value = QuizUiState.Error("Помилка: ${e.message}")
+                _uiState.value = QuizUiState.Error(e.localizedMessage ?: "Unknown Error")
+            }
+        }
+    }
+
+    fun loadMore() {
+        viewModelScope.launch {
+            try {
+                repository.loadMoreQuestions()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
